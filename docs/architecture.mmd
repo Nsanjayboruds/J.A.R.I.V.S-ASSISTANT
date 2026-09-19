@@ -1,0 +1,63 @@
+flowchart TD
+    %% Theme Styling
+    classDef client fill:#081c33,stroke:#00e5ff,stroke-width:2px,color:#e0f7fa,font-weight:bold;
+    classDef backend fill:#151744,stroke:#818cf8,stroke-width:2px,color:#e0e7ff,font-weight:bold;
+    classDef ai fill:#291047,stroke:#c084fc,stroke-width:2px,color:#f3e8ff,font-weight:bold;
+    classDef db fill:#042e22,stroke:#34d399,stroke-width:2px,color:#ecfdf5,font-weight:bold;
+
+    subgraph CLIENT_INPUT ["🖥️ 1. CLIENT INPUT (React 19 + Web APIs)"]
+        direction LR
+        CAM["📷 Webcam (face-api.js Emotion AI)"]:::client
+        MIC["🎙️ Microphone (Web Speech STT)"]:::client
+        UI["⚛️ Cyberpunk HUD Input Console"]:::client
+        GL["🌌 3D Particle Galaxy (OGL WebGL)"]:::client
+    end
+
+    subgraph BACKEND ["⚙️ 2. BACKEND ENGINE (Node.js & Express 5)"]
+        direction TB
+        API["🌐 Express API Gateway & Router"]:::backend
+        AUTH["🔒 JWT Authentication Guard"]:::backend
+        
+        subgraph CORE_MODULES ["Core Modules"]
+            direction LR
+            EMO["🎭 Emotion Tracker"]:::backend
+            PROJ["📂 Project Analyzer"]:::backend
+            EXEC["⚡ OS Command Runner"]:::backend
+            SCREEN["🖥️ Screen Desktop Buffer"]:::backend
+            VOICE["🗣️ Voice Router"]:::backend
+        end
+        
+        API --> AUTH
+        AUTH --> CORE_MODULES
+    end
+
+    subgraph AI_SERVICES ["☁️ 3. AI & CLOUD SERVICES"]
+        direction TB
+        GROQ_LLM["🧠 Groq LLaMA 3.3 70B<br/>(Intent, Reasoning & Code)"]:::ai
+        GROQ_VIS["👁️ Groq Vision 11B<br/>(Desktop Screen OCR)"]:::ai
+        EDGE_TTS["🎙️ Edge Neural TTS<br/>(EN, HI, MR Studio Voices)"]:::ai
+        REPLICATE["🎨 Replicate API<br/>(SDXL Image Synthesis)"]:::ai
+        CLOUDINARY["☁️ Cloudinary CDN<br/>(Assistant Avatar CDN)"]:::ai
+    end
+
+    subgraph PERSISTENCE ["🗄️ 4. PERSISTENCE LAYER"]
+        direction TB
+        MONGO[("🍃 MongoDB Database<br/>Users, RAG History & Settings")]:::db
+    end
+
+    subgraph CLIENT_OUTPUT ["🔊 5. CLIENT OUTPUT & REACTION"]
+        direction LR
+        AUDIO["🔊 HTML5 Neural Audio Playback"]:::client
+        ARC["⚛️ Reactive Arc Reactor & Code Preview Block"]:::client
+    end
+
+    %% Pure Top-to-Bottom Flow
+    CAM ==>|"Emotion Stream (/api/emotion/update)"| API
+    MIC ==>|"Voice Queries (/api/user/asktoassistant)"| API
+    UI ==>|"Manual Command Override"| API
+
+    CORE_MODULES <==>|"Inference Prompts & Screen Buffers"| AI_SERVICES
+    API <==>|"User Profiles & Multi-Turn History"| PERSISTENCE
+
+    VOICE ==>|"Base64 MP3 Audio Stream"| AUDIO
+    API ==>|"Structured JSON & Code Result"| ARC

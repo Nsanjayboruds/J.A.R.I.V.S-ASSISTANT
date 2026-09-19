@@ -1,5 +1,110 @@
 @import "tailwindcss";
-/* In your global CSS like index.css or App.css */
-html {
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+html, body {
   scroll-behavior: smooth;
+  font-family: 'Share Tech Mono', monospace;
+  background-color: #050e17; /* Deep tech blue-black */
+  color: #00e5ff;
 }
+
+::selection {
+  background: #00e5ff;
+  color: #000000;
+}
+
+/* Background grid styling */
+.tech-bg {
+  background-image: 
+    linear-gradient(rgba(0, 229, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.05) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* Animations */
+@keyframes spin-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+.animate-spin-reverse {
+  animation: spin-reverse 20s linear infinite;
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 30s linear infinite;
+}
+
+@keyframes arc-vibrate {
+  0% { transform: scale(1) translate(0, 0); filter: brightness(1); }
+  25% { transform: scale(1.02) translate(1px, -1px); filter: brightness(1.5) drop-shadow(0 0 20px #00e5ff); }
+  50% { transform: scale(1.04) translate(-1px, 1px); filter: brightness(2) drop-shadow(0 0 40px #fff); }
+  75% { transform: scale(1.02) translate(1px, 1px); filter: brightness(1.5) drop-shadow(0 0 20px #00e5ff); }
+  100% { transform: scale(1) translate(0, 0); filter: brightness(1); }
+}
+
+.arc-speaking {
+  animation: arc-vibrate 0.15s linear infinite;
+}
+
+/* Precise Arc Reactor Shapes */
+.arc-triangle-outer {
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+  background: rgba(0, 229, 255, 0.1);
+  border-top: 14px solid #5ae6ff;
+  border-left: 14px solid transparent;
+  border-right: 14px solid transparent;
+  width: 100px;
+  height: 85px;
+  position: relative;
+  filter: drop-shadow(0 0 15px #00e5ff) drop-shadow(0 0 30px rgba(0,229,255,0.5));
+  backdrop-filter: blur(4px);
+}
+.arc-triangle-outer::before {
+  content: "";
+  position: absolute;
+  top: -14px; left: -12px; right: -12px; bottom: 0;
+  border-top: 4px solid #fff;
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+  filter: drop-shadow(0 0 5px #fff);
+}
+
+.arc-triangle-inner {
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+  background: radial-gradient(circle at 50% 40%, #ffffff 0%, #bdf4ff 40%, #00e5ff 80%, #0077ff 100%);
+  box-shadow: 0 0 50px #fff, 0 0 100px #00e5ff;
+  width: 50px;
+  height: 45px;
+}
+
+.arc-segment-ring {
+  background: repeating-conic-gradient(
+    from 0deg,
+    #ffffff 0deg 2deg,
+    #00e5ff 2deg 10deg,
+    #005577 10deg 18deg,
+    transparent 18deg 36deg
+  );
+  -webkit-mask: radial-gradient(transparent 68%, black 69%);
+  mask: radial-gradient(transparent 68%, black 69%);
+  filter: drop-shadow(0 0 8px #00e5ff) drop-shadow(0 0 2px #fff);
+}
+
+.arc-ticks {
+  background: repeating-conic-gradient(
+    from 0deg,
+    transparent 0deg 2deg,
+    #ffffff 2deg 2.5deg,
+    #00e5ff 2.5deg 3deg
+  );
+  -webkit-mask: radial-gradient(transparent 78%, black 79%);
+  mask: radial-gradient(transparent 78%, black 79%);
+  opacity: 0.8;
+  filter: drop-shadow(0 0 2px #00e5ff);
+}
+

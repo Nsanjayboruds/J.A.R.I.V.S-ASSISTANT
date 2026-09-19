@@ -3,6 +3,13 @@ import genToken from "../config/token.js"
 import User from "../models/user.model.js"
 import bcrypt from "bcryptjs"
 
+const cookieOptions = {
+  httpOnly: true,
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  secure: process.env.NODE_ENV === "production",
+}
+
 export const signUp = async (req, res) => {
   try {
     const name = req.body.name?.trim();
@@ -28,12 +35,7 @@ export const signUp = async (req, res) => {
     })
     const token = genToken(user._id)
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      sameSite: "None",
-      secure: true
-    })
+    res.cookie("token", token, cookieOptions)
 
     return res.status(201).json(user)
   } catch (error) {
@@ -59,12 +61,7 @@ export const Login = async (req, res) => {
    
     const token = genToken(user._id)
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      sameSite: "None",
-      secure: true
-    })
+    res.cookie("token", token, cookieOptions)
 
     return res.status(200).json(user)
   } catch (error) {
@@ -75,7 +72,7 @@ export const Login = async (req, res) => {
 
 export const logout = async (req, res) => {
   try {
-    res.clearCookie("token")
+    res.clearCookie("token", cookieOptions)
     return res.status(200).json({ message: "Logout successful!" })
   } catch (error) {
     return res.status(500).json({ message: `logout error ${error} ` })

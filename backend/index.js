@@ -9,6 +9,11 @@ import cors from "cors"
 import userRouter from "./routes/user.routes.js"
 import geminiResponse from "./gemini.js"
 import imageRoutes from './routes/imageRoutes.js';
+import commandRouter from "./routes/command.route.js";
+import visionRouter from "./routes/vision.route.js";
+import projectRouter from "./routes/project.route.js";
+import voiceRoutes from "./routes/voice.route.js";
+import emotionRoutes from "./routes/emotion.route.js";
 const app = express()
 app.use(express.json())
 app.use(cookieParser())
@@ -19,6 +24,11 @@ app.use(cors({
 app.use("/api/auth",authRouter)
 app.use("/api/user",userRouter)
 app.use('/api/image', imageRoutes);
+app.use('/api/command', commandRouter);
+app.use('/api/vision', visionRouter);
+app.use('/api/project', projectRouter);
+app.use("/api/voice", voiceRoutes);
+app.use("/api/emotion", emotionRoutes);
 
 
 app.listen(port,()=>{

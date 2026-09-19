@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>JARVIS System Architecture</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Outfit:wght@400;600;700;800&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 1440px;
+      height: 980px;
+      background: #060913;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.12) 0%, transparent 60%),
+        radial-gradient(circle at 10% 90%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+      font-family: 'Outfit', sans-serif;
+      color: #e2e8f0;
+      padding: 36px 44px;
+      overflow: hidden;
+    }
+
+    /* HEADER */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid rgba(0, 229, 255, 0.25);
+      position: relative;
+    }
+
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 240px;
+      height: 2px;
+      background: linear-gradient(90deg, #00e5ff, #8b5cf6, transparent);
+      box-shadow: 0 0 12px #00e5ff;
+    }
+
+    .title-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: radial-gradient(circle, rgba(0, 229, 255, 0.3), rgba(0, 0, 0, 0.8));
+      border: 1.5px solid #00e5ff;
+      box-shadow: 0 0 20px rgba(0, 229, 255, 0.4), inset 0 0 10px rgba(0, 229, 255, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .title-text h1 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      background: linear-gradient(90deg, #ffffff, #a5f3fc, #00e5ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-transform: uppercase;
+    }
+
+    .title-text p {
+      font-size: 13px;
+      color: #94a3b8;
+      letter-spacing: 0.04em;
+      margin-top: 2px;
+    }
+
+    .badges {
+      display: flex;
+      gap: 10px;
+    }
+
+    .badge {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(0, 229, 255, 0.3);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-family: 'Fira Code', monospace;
+      color: #67e8f9;
+      letter-spacing: 0.05em;
+      box-shadow: 0 0 10px rgba(0, 229, 255, 0.1);
+    }
+
+    /* GRID ARCHITECTURE */
+    .grid-container {
+      display: grid;
+      grid-template-columns: 340px 420px 420px;
+      gap: 24px;
+      height: 720px;
+    }
+
+    /* CARDS & ZONES */
+    .zone {
+      background: rgba(11, 19, 38, 0.75);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .zone-client {
+      border-color: rgba(0, 229, 255, 0.35);
+      box-shadow: 0 0 25px rgba(0, 229, 255, 0.08);
+    }
+
+    .zone-backend {
+      border-color: rgba(129, 140, 248, 0.35);
+      box-shadow: 0 0 25px rgba(129, 140, 248, 0.08);
+    }
+
+    .zone-ai {
+      border-color: rgba(192, 132, 252, 0.35);
+      box-shadow: 0 0 25px rgba(192, 132, 252, 0.08);
+    }
+
+    .zone-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .zone-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .zone-client .zone-icon { background: rgba(0, 229, 255, 0.15); border: 1px solid #00e5ff; color: #00e5ff; }
+    .zone-backend .zone-icon { background: rgba(129, 140, 248, 0.15); border: 1px solid #818cf8; color: #818cf8; }
+    .zone-ai .zone-icon { background: rgba(192, 132, 252, 0.15); border: 1px solid #c084fc; color: #c084fc; }
+
+    .zone-title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .zone-client .zone-title { color: #38bdf8; }
+    .zone-backend .zone-title { color: #a5b4fc; }
+    .zone-ai .zone-title { color: #e879f9; }
+
+    .zone-subtitle {
+      font-size: 11px;
+      color: #64748b;
+      margin-left: auto;
+      font-family: 'Fira Code', monospace;
+    }
+
+    /* MODULE BOXES */
+    .modules-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .module-card {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 10px;
+      padding: 12px 14px;
+      transition: all 0.2s;
+    }
+
+    .module-card:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .module-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .module-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .dot-cyan { background: #00e5ff; box-shadow: 0 0 6px #00e5ff; }
+    .dot-purple { background: #c084fc; box-shadow: 0 0 6px #c084fc; }
+    .dot-indigo { background: #818cf8; box-shadow: 0 0 6px #818cf8; }
+    .dot-emerald { background: #34d399; box-shadow: 0 0 6px #34d399; }
+    .dot-amber { background: #fbbf24; box-shadow: 0 0 6px #fbbf24; }
+
+    .module-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #f1f5f9;
+      letter-spacing: 0.02em;
+    }
+
+    .module-tech {
+      margin-left: auto;
+      font-size: 10px;
+      font-family: 'Fira Code', monospace;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.06);
+      color: #94a3b8;
+    }
+
+    .module-desc {
+      font-size: 11px;
+      color: #94a3b8;
+      line-height: 1.4;
+      margin-left: 14px;
+    }
+
+    /* RIGHT COLUMN SPLIT: AI ON TOP, DATA AT BOTTOM */
+    .right-column {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .zone-data {
+      border-color: rgba(52, 211, 153, 0.35);
+      box-shadow: 0 0 25px rgba(52, 211, 153, 0.08);
+      height: 220px;
+    }
+
+    .zone-data .zone-icon { background: rgba(52, 211, 153, 0.15); border: 1px solid #34d399; color: #34d399; }
+    .zone-data .zone-title { color: #34d399; }
+
+    /* CONNECTOR TAGS */
+    .data-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px dashed rgba(0, 229, 255, 0.4);
+      font-family: 'Fira Code', monospace;
+      font-size: 10px;
+      color: #38bdf8;
+      margin-top: 4px;
+    }
+
+    /* FOOTER / FLOW BAR */
+    .flow-bar {
+      margin-top: 24px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-family: 'Fira Code', monospace;
+    }
+
+    .flow-step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .flow-step-num {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #00e5ff;
+      color: #050811;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+    }
+
+    .flow-step-text {
+      color: #cbd5e1;
+    }
+
+    .flow-arrow {
+      color: #64748b;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="title-group">
+      <div class="logo-icon">⚡</div>
+      <div class="title-text">
+        <h1>J.A.R.V.I.S. Architecture & Data Flow</h1>
+        <p>Multimodal Context-Aware AI Developer Assistant • System Architecture Map</p>
+      </div>
+    </div>
+    <div class="badges">
+      <div class="badge">⚛️ React 19 + Vite</div>
+      <div class="badge">🚀 Node.js + Express 5</div>
+      <div class="badge">🧠 Groq LLaMA 3.3 70B</div>
+      <div class="badge">🎙️ Edge Neural TTS</div>
+      <div class="badge">🍃 MongoDB</div>
+    </div>
+  </div>
+
+  <!-- MAIN ARCHITECTURE 3-COLUMN GRID -->
+  <div class="grid-container">
+
+    <!-- COLUMN 1: CLIENT LAYER -->
+    <div class="zone zone-client">
+      <div class="zone-header">
+        <div class="zone-icon">🖥️</div>
+        <div class="zone-title">Client Layer</div>
+        <div class="zone-subtitle">Frontend UI</div>
+      </div>
+      <div class="modules-list">
+        <div class="module-card">
+          <div class="module-top">
+            <span class="module-dot dot-cyan"></span>
+            <span class="module-name">Cyberpunk Arc Reactor HUD</span>
+            <span class="module-tech">Tailwind v4</span>
+          </div>
+          <div class="module-desc">Dynamic reactive visualizer, rotating tick rings, audio pulse glow, and manual code editor output.</div>
+        </div>
+
+        <div class="module-card">
+          <div class="module-top">
+            <span class="module-dot dot-cyan"></span>
+            <span class="module-name">3D WebGL Particle Galaxy</span>
+            <span class="module-tech">OGL Engine</span>
+          </div>
+          <div class="module-desc">GPU-accelerated particle vortex reacting to mouse velocity and user presence.</div>
+        </div>
+
+        <div class="module-card">
+          <div class="module-top">
+            <span class="module-dot dot-amber"></span>
+            <span class="module-name">Real-Time Facial Emotion AI</span>
+            <span class="module-tech">face-api.js</span>
+          </div>
+          <div class="module-desc">In-browser neural net scanning webcam feed with 5-frame smoothing for jitter-free emotion tracking.</div>
+        </div>
+
+        <div class="module-card">
+          <div class="module-top">
+            <span class="module-dot dot-cyan"></span>
+            <span class="module-name">Multilingual Voice Input</span>
+            <span class="module-tech">Web Speech STT</span>
+          </div>
+          <div class="module-desc">Continuous speech recognition with multi-language detection (EN, HI, MR, ES, FR, JA).</div>
+        </div>
+
+        <div class="module-card">
+          <div class="module-top">
+            <span class="module-dot dot-emerald"></span>
+            <span class="module-name">Neural Audio Player</span>
+            <span class="module-tech">HTML5 Audio</span>
+          </div>
+          <div class="module-desc">Streams high-fidelity base64 MP3 generated from backend neural voice pipelines.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLUMN 2: BACKEND LAYER -->
+    <div class="zone zone-backend">
+      <div class="zone-header">
+        <div class="zone-icon">⚙️</div>
+        <div class="zone-title">Backend Layer</div>
+        <div class="zone-subtitle">Express Engine</div>
+      </div>
+      <div class="modules-list">
+        <div class="module-card">
+          <div class="module-top">
+            <span class="module-dot dot-indigo"></span>
+            <span class="module-name">API Gateway & Routers</span>
+            <span class="module-tech">Express 5</span>
+          </div>
+          <div class="module-desc">Central routing for /auth, /user, /project, /vision, /voice, /emotion, and /command.</div>
+        </div>
+
+        <div class="module-card">
+          <div class="module-top">
+            <span class="module-dot dot-emerald"></span>
+            <span class="module-name">JWT Auth & Cookie Guard</span>
+            <span class="module-tech">Bcrypt + JWT</span>
+          </div>
+          <div class="module-desc">Secures assistant endpoints, maintains encrypted session cookies and user identity.</div>
+        </div>
+
+        <div class="module-card">
+          <div class="module-top">
+            <span class="module-dot dot-indigo"></span>
+            <span class="module-name">Workspace Project Analyzer</span>
+            <span class="module-tech">fs + AST</span>
+          </div>
+          <div class="module-desc">Recursively indexes files, detects frameworks (React, Next, Express), and extracts prompt context.</div>
+        </div>
+
+        <div class="module-card">
+          <div class="module-top">
+            <span class="module-dot dot-amber"></span>
+            <span class="module-name">OS Automation Executor</span>
+            <span class="module-tech">child_process</span>
+          </div>
+          <div class="module-desc">Executes authorized host bash commands (launches VS Code, runs dev servers, terminal tasks).</div>
+        </div>
+
+        <div class="module-card">
+          <div class="module-top">
+            <span class="module-dot dot-cyan"></span>
+            <span class="module-name">Phonetic Voice Router</span>
+            <span class="module-tech">PronounceDict</span>
+          </div>
+          <div class="module-desc">Translates dev acronyms ("API", "GPU", "React") to regional phonetics for natural Hindi/Marathi TTS.</div>
+        </div>
+
+        <div class="module-card">
+          <div class="module-top">
+            <span class="module-dot dot-purple"></span>
+            <span class="module-name">Desktop Screen Capture</span>
+            <span class="module-tech">screenshot-desktop</span>
+          </div>
+          <div class="module-desc">Grabs active desktop display buffers and feeds them to the Vision LLM for UI debugging.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLUMN 3: AI SERVICES + DATA LAYER -->
+    <div class="right-column">
+      
+      <!-- ZONE AI SERVICES -->
+      <div class="zone zone-ai" style="flex: 1;">
+        <div class="zone-header">
+          <div class="zone-icon">☁️</div>
+          <div class="zone-title">AI & Cloud Services</div>
+          <div class="zone-subtitle">Cognitive Layer</div>
+        </div>
+        <div class="modules-list">
+          <div class="module-card">
+            <div class="module-top">
+              <span class="module-dot dot-purple"></span>
+              <span class="module-name">Groq LLaMA 3.3 70B</span>
+              <span class="module-tech">Fast LPUs</span>
+            </div>
+            <div class="module-desc">Sub-second reasoning, strict structured JSON intent generation, and adaptive emotional persona.</div>
+          </div>
+
+          <div class="module-card">
+            <div class="module-top">
+              <span class="module-dot dot-purple"></span>
+              <span class="module-name">Groq LLaMA 3.2 11B Vision</span>
+              <span class="module-tech">Multimodal</span>
+            </div>
+            <div class="module-desc">Inspects screenshots to summarize active windows, error traces, and IDE layouts.</div>
+          </div>
+
+          <div class="module-card">
+            <div class="module-top">
+              <span class="module-dot dot-cyan"></span>
+              <span class="module-name">Microsoft Edge Neural TTS</span>
+              <span class="module-tech">node-edge-tts</span>
+            </div>
+            <div class="module-desc">Generates human-grade speech in English (Andrew), Hindi (Swara), and Marathi (Aarohi).</div>
+          </div>
+
+          <div class="module-card">
+            <div class="module-top">
+              <span class="module-dot dot-amber"></span>
+              <span class="module-name">Media & Avatars</span>
+              <span class="module-tech">Cloudinary + Replicate</span>
+            </div>
+            <div class="module-desc">Asset CDN for custom assistant avatars and on-demand SDXL AI image synthesis.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ZONE DATA LAYER -->
+      <div class="zone zone-data">
+        <div class="zone-header">
+          <div class="zone-icon">🗄️</div>
+          <div class="zone-title">Persistence Layer</div>
+          <div class="zone-subtitle">MongoDB Database</div>
+        </div>
+        <div class="modules-list">
+          <div class="module-card">
+            <div class="module-top">
+              <span class="module-dot dot-emerald"></span>
+              <span class="module-name">User Profiles & Credentials</span>
+              <span class="module-tech">Mongoose</span>
+            </div>
+            <div class="module-desc">Stores user accounts, hashed passwords, assistant preferences, and Cloudinary avatar links.</div>
+          </div>
+
+          <div class="module-card">
+            <div class="module-top">
+              <span class="module-dot dot-emerald"></span>
+              <span class="module-name">RAG Session Memory & History</span>
+              <span class="module-tech">Context Cache</span>
+            </div>
+            <div class="module-desc">Retains multi-turn conversation logs and emotional trend metrics across developer sessions.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- WORKFLOW STRIP -->
+  <div class="flow-bar">
+    <div class="flow-step">
+      <div class="flow-step-num">1</div>
+      <div class="flow-step-text">Webcam & Mic Stream Input</div>
+    </div>
+    <div class="flow-arrow">➔</div>
+    <div class="flow-step">
+      <div class="flow-step-num">2</div>
+      <div class="flow-step-text">Emotion & Workspace Context Built</div>
+    </div>
+    <div class="flow-arrow">➔</div>
+    <div class="flow-step">
+      <div class="flow-step-num">3</div>
+      <div class="flow-step-text">Groq LLaMA 3.3 70B Intent Routing</div>
+    </div>
+    <div class="flow-arrow">➔</div>
+    <div class="flow-step">
+      <div class="flow-step-num">4</div>
+      <div class="flow-step-text">OS Exec / Vision / Edge Neural TTS</div>
+    </div>
+    <div class="flow-arrow">➔</div>
+    <div class="flow-step">
+      <div class="flow-step-num">5</div>
+      <div class="flow-step-text">Arc Reactor Reactive Playback</div>
+    </div>
+  </div>
+
+</body>
+</html>

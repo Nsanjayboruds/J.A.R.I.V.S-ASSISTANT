@@ -3,6 +3,8 @@ import uploadOnCloudinary from "../config/cloundinary.js";
 import geminiResponse from "../gemini.js";
 import User from "../models/user.model.js";
 import moment  from "moment";
+import { getEmotionState } from "../services/emotion/emotion.service.js";
+
 export const genCurrentUser = async (req, res) => {
     try {
         const userId = req.userId
@@ -214,22 +216,24 @@ export const askToAssistant = async (req, res) => {
     const userName = user.name;
     const assistantName = user.assistantName;
 
-    const result = await geminiResponse(command, assistantName, userName);
+    // Pass the last 10 history items to provide context without overloading the token limit
+    const recentHistory = user.history.slice(-10);
+    const emotionState = getEmotionState(user._id);
 
-    if (!result || typeof result !== "object") {
-      return res.status(500).json({ response: "Gemini API error: Invalid response." });
-    }
+    const result = await geminiResponse(command, assistantName, userName, recentHistory, emotionState.currentEmotion);
 
-    const { type, userInput, response: geminiText } = result;
-
-    if (!type || !userInput || !geminiText) {
-      return res.status(400).json({ response: "Gemini returned an incomplete response." });
-    }
+    const type = result?.type || "general";
+    const language = result?.language || "en-US";
+    const userInput = result?.userInput || command;
+    const geminiText = result?.response || "Sorry, I couldn't understand that.";
+    const codeResult = result?.codeResult || null;
+    const commandToRun = result?.commandToRun || null;
 
     switch (type) {
       case "get-date":
         return res.json({
           type,
+          language,
           userInput,
           response: `Current date is ${moment().format("YYYY-MM-DD")}`,
         });
@@ -237,6 +241,7 @@ export const askToAssistant = async (req, res) => {
       case "get-time":
         return res.json({
           type,
+          language,
           userInput,
           response: `Current time is ${moment().format("HH:mm A")}`,
         });
@@ -244,6 +249,7 @@ export const askToAssistant = async (req, res) => {
       case "get-day":
         return res.json({
           type,
+          language,
           userInput,
           response: `Today is ${moment().format("dddd")}`,
         });
@@ -251,35 +257,45 @@ export const askToAssistant = async (req, res) => {
       case "get-month":
         return res.json({
           type,
+          language,
           userInput,
           response: `Current month is ${moment().format("MMMM")}`,
         });
-        case 'shutdown':
-  // Windows shutdown command
-  const { exec } = await import('child_process');
-  exec('shutdown /s /t 0');
-  return res.json({
-    type,
-    userInput,
-    response: "Shutting down your laptop now."
-  });
-  
-    
 
-
-
-        case "google-search":
-          case "youtube-search":
-          case "youtube-play":
-          case "general":
-          case "calculator-open":
-          case "instagram-open":
-          case "facebook-open":
-          case "weather-show":
-
-      default:
+      case "system-command":
         return res.json({
           type,
+          language,
+          userInput,
+          response: geminiText,
+          commandToRun
+        });
+
+      case "code-generate":
+        return res.json({
+          type,
+          language,
+          userInput,
+          response: geminiText,
+          codeResult
+        });
+
+      case "general":
+      case "google-search":
+      case "youtube-search":
+      case "youtube-play":
+      case "youtube-open":
+      case "calculator-open":
+      case "instagram-open":
+      case "facebook-open":
+      case "weather-show":
+      case "image-generate":
+      case "shutdown":
+      case "read-screen":
+      case "project-analyze":
+        return res.json({
+          type,
+          language,
           userInput,
           response: geminiText,
         });
