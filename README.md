@@ -2,6 +2,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Status-Active%20Development-brightgreen?style=for-the-badge" alt="Status" />
+  <img src="https://img.shields.io/badge/Docker-Compose%20Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
   <img src="https://img.shields.io/badge/Architecture-Full--Stack%20Multimodal-00e5ff?style=for-the-badge" alt="Architecture" />
   <img src="https://img.shields.io/badge/LLM-Groq%20Llama%203.3%2070B-orange?style=for-the-badge" alt="Groq Llama 3.3" />
   <img src="https://img.shields.io/badge/Vision-Llama%203.2%2011B%20Vision-blueviolet?style=for-the-badge" alt="Llama Vision" />
@@ -25,10 +26,12 @@
 - [Technology Stack](#-technology-stack)
 - [Project Directory Structure](#-project-directory-structure)
 - [Getting Started](#-getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Backend Setup](#1-backend-setup)
-  - [Frontend Setup](#2-frontend-setup)
-  - [Face Recognition Models](#3-face-recognition-models)
+  - [🐳 Option A: Docker Compose (Recommended)](#-option-a-docker-compose-recommended)
+  - [💻 Option B: Manual Local Setup](#-option-b-manual-local-setup)
+    - [Prerequisites](#prerequisites)
+    - [1. Backend Setup](#1-backend-setup)
+    - [2. Frontend Setup](#2-frontend-setup)
+    - [3. Face Recognition Models](#3-face-recognition-models)
 - [Configuration & Environment Variables](#-configuration--environment-variables)
 - [Voice Commands & Usage Examples](#-voice-commands--usage-examples)
 - [REST API Reference](#-rest-api-reference)
@@ -279,7 +282,9 @@ jarvis/
     │   │       ├── edgeTTS.js                 # Microsoft Edge Neural TTS generator
     │   │       ├── pronunciationDictionary.js # Phonetic dictionary for dev acronyms
     │   │       └── voiceRouter.js             # TTS engine selector
+    │   ├── .dockerignore                 # Backend Docker build exclusion rules
     │   ├── .env.example                  # Environment configuration template
+    │   ├── Dockerfile                    # Node 20 Debian slim container definition
     │   ├── gemini.js                     # Groq LLM orchestration & prompt pipeline
     │   ├── index.js                      # Express server entry point
     │   └── package.json                  # Backend dependencies
@@ -307,9 +312,13 @@ jarvis/
     │   │   ├── App.jsx                   # Application routing structure
     │   │   ├── index.css                 # Cyberpunk animations & Tailwind setup
     │   │   └── main.jsx                  # React DOM entry point
+    │   ├── .dockerignore                 # Frontend Docker build exclusion rules
+    │   ├── Dockerfile                    # Multi-stage build (Vite + Nginx Alpine)
+    │   ├── nginx.conf                    # Nginx SPA routing & reverse proxy config
     │   ├── package.json                  # Frontend dependencies
     │   └── vite.config.js                # Vite build configuration
     │
+    ├── docker-compose.yml                # Full-stack multi-container orchestrator
     └── README.md                         # Project documentation
 ```
 
@@ -317,9 +326,64 @@ jarvis/
 
 ## 🚀 Getting Started
 
-Follow these steps to set up and run J.A.R.V.I.S. locally on your machine.
+You can run J.A.R.I.V.S. either via **Docker Compose** (recommended for zero-hassle, single-command startup) or **manually** on your host machine.
 
-### Prerequisites
+---
+
+### 🐳 Option A: Docker Compose (Recommended)
+
+Run the entire full-stack application (MongoDB, Express API, and React Frontend) with a single command:
+
+#### 1. Setup Environment
+Ensure your `backend/.env` is configured with your API credentials:
+
+```bash
+# Copy template if you haven't created your .env yet
+cp backend/.env.example backend/.env
+```
+*(Make sure to insert your free `GROQ_API_KEY` from [console.groq.com](https://console.groq.com/)).*
+
+#### 2. Start Containers
+```bash
+# Build and run all services in detached mode
+docker compose up -d
+```
+
+This starts:
+| Container | Service | Port | Description |
+| :--- | :--- | :--- | :--- |
+| `jarvis_frontend` | React 19 + Nginx | `5173` | Cyberpunk HUD, Arc Reactor, Emotion Detection |
+| `jarvis_backend` | Express.js 5 | `3000` | Groq Llama reasoning, Edge TTS, REST APIs |
+| `jarvis_mongo` | MongoDB 7.0 | `27017` | Persistent DB volume (`mongo_data`) |
+
+#### 3. View Logs & Status
+```bash
+# Check running containers
+docker compose ps
+
+# Tail logs in real time
+docker compose logs -f
+
+# View backend logs specifically
+docker compose logs -f backend
+```
+
+#### 4. Stop Containers
+```bash
+# Stop all containers safely
+docker compose down
+
+# To also wipe the persistent database volume:
+# docker compose down -v
+```
+
+---
+
+### 💻 Option B: Manual Local Setup
+
+Follow these steps to run services directly on your host machine.
+
+#### Prerequisites
 
 Ensure you have the following installed on your system:
 - **Node.js**: `v18.0.0` or higher ([Download](https://nodejs.org/))

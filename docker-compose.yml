@@ -1,0 +1,62 @@
+services:
+  # Database Service: MongoDB
+  mongo:
+    image: mongo:7.0
+    container_name: jarvis_mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - jarvis_net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # Backend Service: Node.js & Express API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: jarvis_backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./backend/.env
+    environment:
+      - PORT=3000
+      - MONGODB_URL=mongodb://mongo:27017/virtualassistant
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - jarvis_net
+
+  # Frontend Service: React 19 + Vite (Nginx SPA)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: jarvis_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - jarvis_net
+
+# Named persistent volumes
+volumes:
+  mongo_data:
+    driver: local
+
+# Isolated container network
+networks:
+  jarvis_net:
+    driver: bridge
