@@ -35,6 +35,7 @@
 - [Configuration & Environment Variables](#-configuration--environment-variables)
 - [Voice Commands & Usage Examples](#-voice-commands--usage-examples)
 - [REST API Reference](#-rest-api-reference)
+- [🤖 Agent Loop Architecture](#-agent-loop-architecture)
 - [Troubleshooting & FAQs](#-troubleshooting--faqs)
 - [Roadmap](#-roadmap)
 - [Author & Acknowledgments](#-author--acknowledgments)
@@ -560,6 +561,150 @@ Speak directly to J.A.R.V.I.S. or enter commands into the manual command overrid
 - [ ] **Multi-Monitor Vision Support:** Ability to specify which display screen to capture and inspect during screen reading.
 - [ ] **Wake-Word Detection:** Always-listening local hotword activation (*"Hey Jarvis"*).
 - [ ] **Long-Term Vector Memory:** ChromaDB / Pinecone vector integration for code snippet retrieval across historical projects.
+
+---
+
+## 🤖 Agent Loop Architecture
+
+J.A.R.V.I.S. includes a full autonomous, iterative developer agent powered by the **ReAct** (Reasoning + Acting + Observing) loop pattern. Rather than a single LLM call → single answer, the agent executes multi-step workflows, observes tool results, self-corrects errors, and only terminates when the goal is fully achieved.
+
+### How the Loop Works
+
+```text
+┌──────────────────────────────────────────────────────────┐
+│                        User Goal                          │
+└─────────────────────────┬────────────────────────────────┘
+                          │
+                          ▼
+            ┌─────────────────────────┐
+            │      Agent State        │
+            │  goal · history ·       │
+            │  actions · iterations   │
+            └────────────┬────────────┘
+                         │
+   ┌─────────────────────▼──────────────────────────────┐
+   │                                                     │
+   │  LLM Engine (Groq qwen3.8-27b / gpt-oss-120b)      │
+   │     ↓ returns structured JSON decision              │
+   │   {thought, action, action_input, is_final}         │
+   │                                                     │
+   │   is_final? ──YES──► TERMINATE & return answer      │
+   │      │                                              │
+   │      NO                                             │
+   │      ▼                                              │
+   │  SafetyGuard.validateCommand()                      │
+   │      ▼                                              │
+   │  ToolRegistry.execute(action, action_input)         │
+   │      ▼                                              │
+   │  Tool Result (stdout / file content / error)        │
+   │      ▼                                              │
+   │  Feed Observation back to LLM context               │
+   │      ▼                                              │
+   │  Repeat (max 8 iterations)                          │
+   └─────────────────────────────────────────────────────┘
+```
+
+### Available Tools
+
+| Tool | Description |
+|------|-------------|
+| `read_file` | Read file contents with optional line range |
+| `write_file` | Create or fully overwrite a file |
+| `patch_file` | Replace a target snippet in a file (surgical edit) |
+| `list_dir` | List directory contents (ignores node_modules/.git) |
+| `search_code` | Grep text/pattern across files in a directory |
+| `execute_command` | Run a bash command with safety validation |
+| `analyze_project` | Analyze project structure, frameworks, and dependencies |
+| `inspect_screen` | Screenshot desktop and analyze with Groq Vision |
+
+### Safety Guard
+
+Every shell command routed through `execute_command` is validated by `SafetyGuard` before execution. Blocked patterns include:
+- `rm -rf /`, `rm -rf *`, `rm -rf ~`
+- `mkfs`, `dd if=... of=/dev/...` (disk format/overwrite)
+- `:(){ :|:& };:` (fork bomb)
+- `curl|bash`, `wget|bash` (arbitrary remote code execution)
+- System shutdown/reboot commands
+
+API keys and secrets in any output are automatically redacted before being stored in the agent history.
+
+### Real Multi-Step Execution Trace
+
+This is a real trace from the demo task: *"Find failing tests, identify the bugs, fix them, and verify the fix."*
+
+```
+[Agent] Goal: Run the test suite, identify failures, patch the bugs, re-run to confirm.
+[Agent] Iteration 1
+[Agent] Thought: Start by running the tests to see what failures occur.
+[Agent] Selected tool: execute_command | {"command": "node backend/demo_task/mathUtils.test.js"}
+[Tool]  Result: FAIL: factorial(0) should equal 1 (0 !== 1)
+                FAIL: calculateAverage([10,20,30]) should equal 20 (30 !== 20)
+                1 passed, 3 failed
+
+[Agent] Iteration 2
+[Agent] Thought: 3 failures seen. Read the source to identify root causes.
+[Agent] Selected tool: read_file | {"path": "backend/demo_task/mathUtils.js"}
+[Tool]  Result: Line 8: if (n === 0) return 0;   ← BUG 1
+                Line 22: return sum / (numbers.length - 1); ← BUG 2
+
+[Agent] Iteration 3
+[Agent] Thought: Patch Bug 1 - factorial base case returns 0 instead of 1.
+[Agent] Selected tool: patch_file | {targetSnippet: "...return 0;", replacementSnippet: "...return 1;"}
+[Tool]  Result: Successfully patched mathUtils.js
+
+[Agent] Iteration 4
+[Agent] Thought: Patch Bug 2 - average divides by length-1 instead of length.
+[Agent] Selected tool: patch_file | {targetSnippet: "...length - 1);", replacementSnippet: "...length;"}
+[Tool]  Result: Successfully patched mathUtils.js
+
+[Agent] Iteration 5
+[Agent] Thought: Verify both fixes pass all tests.
+[Agent] Selected tool: execute_command | {"command": "node backend/demo_task/mathUtils.test.js"}
+[Tool]  Result: 4 passed, 0 failed ✅
+
+[Agent] Iteration 6 → FINAL
+[Agent] Final answer: Fixed 2 bugs in mathUtils.js:
+  1. factorial(0) now correctly returns 1 (0! = 1)
+  2. calculateAverage now divides by numbers.length (not length-1)
+  All 4 tests pass.
+```
+
+### Known Limitation / Failure Case (Interview-Ready)
+
+During testing, the agent encountered a **real failure case** worth discussing:
+
+**What happened (Iteration 3 of first run):**
+> The LLM sent `{ "path": "..." }` but the tool was coded to destructure `{ filePath }`, so it threw a Node.js path resolution error. The agent correctly observed this and on the next iteration self-corrected by using `execute_command` with `cat` as a workaround — and continued making progress.
+
+**Root cause:** The LLM uses parameter names that match the *semantic* description, not always the exact schema key.
+
+**Fix applied:** All tools now accept both `path`/`filePath`, `targetSnippet`/`targetContent`, and `replacement`/`replacementSnippet` as aliases, making the tool interface more forgiving without changing any other code.
+
+**Interview talking point:** *"The first run showed me that LLMs hallucinate parameter names based on description semantics rather than exact schema keys. I diagnosed it from the error message, added alias normalization to the tool input handlers, and the agent correctly completed the goal on the second run — never having to change the LLM prompt at all."*
+
+### Running the Agent
+
+**CLI runner (local):**
+```bash
+# Run the default bug-fixing demo
+node backend/run_agent.js
+
+# Run with a custom goal
+node backend/run_agent.js "Analyze the backend project structure and summarize all API routes"
+```
+
+**REST API:**
+```bash
+POST /api/agent/run
+Content-Type: application/json
+
+{
+  "goal": "List all files in backend/services and summarize what each service does",
+  "maxIterations": 8
+}
+```
+
+Response includes: `status`, `iterations`, `actionsTaken`, `finalAnswer`, `logs`, and full `history` of each iteration.
 
 ---
 

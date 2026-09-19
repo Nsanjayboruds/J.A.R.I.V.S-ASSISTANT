@@ -14,6 +14,7 @@ import visionRouter from "./routes/vision.route.js";
 import projectRouter from "./routes/project.route.js";
 import voiceRoutes from "./routes/voice.route.js";
 import emotionRoutes from "./routes/emotion.route.js";
+import agentRouter from "./routes/agent.routes.js";
 const app = express()
 app.use(express.json())
 app.use(cookieParser())
@@ -29,6 +30,7 @@ app.use('/api/vision', visionRouter);
 app.use('/api/project', projectRouter);
 app.use("/api/voice", voiceRoutes);
 app.use("/api/emotion", emotionRoutes);
+app.use("/api/agent", agentRouter);
 
 
 app.listen(port,()=>{
